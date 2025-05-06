@@ -1,107 +1,99 @@
 package game.actions;
 
+import edu.monash.fit2099.engine.actions.Action;
 import edu.monash.fit2099.engine.actors.Actor;
+import edu.monash.fit2099.engine.actors.attributes.ActorAttributeOperations;
+import edu.monash.fit2099.engine.actors.attributes.BaseActorAttributes;
+import edu.monash.fit2099.engine.items.Item;
 import edu.monash.fit2099.engine.positions.GameMap;
-import edu.monash.fit2099.engine.positions.Location;
-import game.animals.Animal;
-import game.Enum.EntityType;
-import game.ground.RotEffect;
-import game.ground.Inheritree;
-import game.items.Talisman;
-import java.util.List;
-import java.util.ArrayList;
+import game.Curable;
 
 /**
- * Action to cure an animal with the Talisman
+ * Class representing an action to cure a {@link Curable} target using a curing item such as a Talisman.
+ * This action will consume stamina if the target is beneath the actor (e.g. a Blight).
+ * Created by:
+ * @author Chan Chee Wei
  */
-public class CureAction extends UseAction {
-    private RotEffect target;
+public class CureAction extends Action implements StaminaCosting{
+    /**
+     * The Item used to cure
+     */
+    private final Item item;
 
     /**
-     * Constructor
-     *
-     * @param target the animal to cure
-     * @param talisman the talisman being used
+     * The target to be cured
      */
-    public CureAction(RotEffect target, Talisman talisman) {
-        super(talisman);
+    private final Curable target;
+
+    /**
+     * The direction of the target relative to the actor
+     */
+    private String direction;
+
+    /**
+     * Constructs a CureAction with a direction.
+     *
+     * @param item the curing item used
+     * @param target the target to be cured
+     * @param direction the direction of the target relative to the actor
+     */
+    public CureAction(Item item, Curable target, String direction) {
+        this.item = item;
+        this.target = target;
+        this.direction = direction;
+    }
+
+    /**
+     * Constructs a CureAction with no direction (e.g., target is under actor).
+     *
+     * @param item the curing item used
+     * @param target the target to be cured
+     */
+    public CureAction(Item item, Curable target) {
+        this.item = item;
         this.target = target;
     }
 
     /**
-     * Execute the action
+     * Returns the stamina cost of curing when the target is under the actor.
      *
-     * @param actor the actor performing the action
+     * @return 50 units of stamina
+     */
+    @Override
+    public int getStaminaCost() {
+        return 50;
+    }
+
+    /**
+     * Executes the curing action. If the target is beneath the actor, stamina is reduced.
+     *
+     * @param actor the actor performing the cure
      * @param map the game map
-     * @return description of what happened
+     * @return a message describing the result of the action
      */
     @Override
     public String execute(Actor actor, GameMap map) {
-        // Using talisman requires stamina
-        if (!checkStamina(actor, 50)) {
-            return actor + " doesn't have enough stamina to use the Talisman.";
-        }
-
-        // Different effects based on target type
-        if (target instanceof Animal) {
-            Animal animal = (Animal) target;
-
-            if (animal.getType() == EntityType.SPIRIT_GOAT) {
-                // Reset countdown for spirit goat
-                target.resetCountdown();
-                return actor + " used the Talisman to cure the " + animal + ". Its countdown was reset to " +
-                        target.getMaxCountdown() + " turns.";
-            }
-            else if (animal.getType() == EntityType.OMEN_SHEEP) {
-                // Create Inheritrees around sheep
-                Location sheepLocation = map.locationOf((Actor)animal);
-                for (Location surroundingLocation : getSurroundingLocations(sheepLocation, map)) {
-                    if (!surroundingLocation.containsAnActor()) {
-                        surroundingLocation.setGround(new Inheritree());
-                    }
+        if (direction == null) {
+            if (actor.hasAttribute(BaseActorAttributes.STAMINA)) {
+                if (actor.getAttribute(BaseActorAttributes.STAMINA) < getStaminaCost()) {
+                    return actor + " doesn't have enough stamina";
                 }
-                return actor + " used the Talisman on the " + animal + ". Inheritrees grew around it!";
+                actor.modifyAttribute(BaseActorAttributes.STAMINA, ActorAttributeOperations.DECREASE, getStaminaCost());
             }
         }
 
-        return actor + " used the Talisman, but nothing happened.";
+        String result = target.cure(actor, map);
+        return menuDescription(actor) + "\n" + result;
     }
 
     /**
-     * Get surrounding locations (8 adjacent squares)
-     *
-     * @param location The center location
-     * @param map The game map
-     * @return List of adjacent locations
-     */
-    private List<Location> getSurroundingLocations(Location location, GameMap map) {
-        List<Location> surroundings = new ArrayList<>();
-
-        for (int x = -1; x <= 1; x++) {
-            for (int y = -1; y <= 1; y++) {
-                if (x == 0 && y == 0) continue; // Skip center
-
-                int newX = location.x() + x;
-                int newY = location.y() + y;
-
-                if (map.getXRange().contains(newX) &&
-                        map.getYRange().contains(newY)) {
-                    surroundings.add(map.at(newX, newY));
-                }
-            }
-        }
-
-        return surroundings;
-    }
-
-    /**
-     * Description for the UI menu
+     * Describes the action in the game menu.
      *
      * @param actor the actor performing the action
-     * @return description for the menu
+     * @return a string description of the cure action
      */
     @Override
     public String menuDescription(Actor actor) {
-        return actor + " uses Talisman on " + ((Actor)target) + " (50 stamina)";
+        return actor + " uses " + item + " to cure the " + target + (direction == null? " under them" : " at " + direction);
     }
 }

@@ -2,103 +2,80 @@ package game.actions;
 
 import edu.monash.fit2099.engine.actions.Action;
 import edu.monash.fit2099.engine.actors.Actor;
+import edu.monash.fit2099.engine.actors.attributes.ActorAttributeOperations;
+import edu.monash.fit2099.engine.actors.attributes.BaseActorAttributes;
 import edu.monash.fit2099.engine.positions.GameMap;
 import edu.monash.fit2099.engine.positions.Location;
-import game.ground.Bloodrose;
-import game.Plants.Plant;
-import game.Plants.Seed;
-import game.Enum.SeedType;
-import game.actors.Player;
-import game.ground.Inheritree;
-import game.ground.Soil;
+import game.items.Seed;
 
 /**
- * Action to plant a seed.
+ * An action that allows an actor to plant a {@link Seed} on the ground beneath them.
+ * Consumes stamina based on the crop associated with the seed.
+ * After planting, the seed is removed from the inventory and the crop's effect is applied.
+ * This action implements {@link StaminaCosting} to allow stamina-based filtering or handling.
+ * Created by:
+ * @author Chan Chee Wei
  */
-public class PlantAction extends Action {
-
-    private Seed seed;
+public class PlantAction extends Action implements StaminaCosting {
+    /**
+     * The seed to be planted
+     */
+    private final Seed seed;
 
     /**
-     * Constructor.
+     * Constructor for PlantAction.
      *
-     * @param seed The seed to plant
+     * @param seed The seed to be planted
      */
     public PlantAction(Seed seed) {
         this.seed = seed;
     }
 
     /**
-     * Plant the seed at the actor's location if it's valid ground.
+     * Gets the stamina cost of planting, defined by the crop.
      *
-     * @param actor The actor planting the seed
-     * @param map The map the actor is on
-     * @return A description of the planting action
+     * @return the stamina cost of the associated crop
+     */
+    @Override
+    public int getStaminaCost() {
+        return seed.getCrop().getStaminaCost();
+    }
+
+    /**
+     * Executes the planting action.
+     * Decreases actor's stamina, removes the seed from inventory, replaces the current ground with the crop, and calls the crop's on-plant behavior.
+     *
+     * @param actor the actor performing the planting
+     * @param map the game map
+     * @return a message describing the result of the action
      */
     @Override
     public String execute(Actor actor, GameMap map) {
-        Location location = map.locationOf(actor);
-        SeedType seedType = seed.getType();
-
-        // Check if the ground is soil (can't plant on blight)
-        if (!(location.getGround() instanceof Soil)) {
-            return actor + " cannot plant on " + location.getGround() + ".";
-        }
-
-        // Check stamina requirements
-        if (actor instanceof Player) {
-            Player player = (Player) actor;
-            int staminaCost = getStaminaCost(seedType);
-
-            if (!player.useStamina(staminaCost)) {
-                return actor + " doesn't have enough stamina to plant.";
+        if (actor.hasAttribute(BaseActorAttributes.STAMINA)) {
+            if (actor.getAttribute(BaseActorAttributes.STAMINA) < getStaminaCost()) {
+                return actor + " doesn't have enough stamina";
             }
+            actor.modifyAttribute(BaseActorAttributes.STAMINA, ActorAttributeOperations.DECREASE, getStaminaCost());
         }
 
-        // Remove the seed from inventory
         actor.removeItemFromInventory(seed);
 
-        // Create plant and apply effects
-        Plant plant = createPlant(seedType);
-        location.setGround(plant);
-        plant.plantingEffect(location);
+        Location location = map.locationOf(actor);
+        location.setGround(seed.getCrop());
 
-        return actor + " plants a " + plant + ".";
+        seed.getCrop().onPlant(actor, location);
+
+        return menuDescription(actor);
     }
 
     /**
-     * Create a plant from a seed type
+     * Describes the action in the menu.
      *
-     * @param seedType The type of seed
-     * @return The created plant
-     */
-    private Plant createPlant(SeedType seedType) {
-        if (seedType == SeedType.INHERITREE) {
-            return new Inheritree();
-        } else {
-            return new Bloodrose();
-        }
-    }
-
-    /**
-     * Get stamina cost for planting a seed type
-     *
-     * @param seedType The type of seed
-     * @return The stamina cost
-     */
-    private int getStaminaCost(SeedType seedType) {
-        return seedType == SeedType.INHERITREE ? 25 : 75;
-    }
-
-    /**
-     * A description of the action suitable for display in the UI menu.
-     *
-     * @param actor The actor performing the action
-     * @return A string describing the action
+     * @param actor the actor performing the action
+     * @return a string description of the planting action
      */
     @Override
     public String menuDescription(Actor actor) {
-        int staminaCost = getStaminaCost(seed.getType());
-        return actor + " plants " + seed + " (" + staminaCost + " stamina)";
+        return actor + " plants " + seed + " here";
     }
 }

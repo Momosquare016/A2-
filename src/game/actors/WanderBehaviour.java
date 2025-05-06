@@ -1,4 +1,4 @@
-package game.actions;
+package game.actors;
 
 import edu.monash.fit2099.engine.actions.Action;
 import edu.monash.fit2099.engine.actors.Actor;
@@ -11,14 +11,20 @@ import java.util.ArrayList;
 import java.util.Random;
 
 /**
- * A class that generates a MoveAction to wander randomly.
+ * Class representing random movement for
+ * This was adapted from a demonstration of the game engine from here:
+ * edu.monash.fit2099.demo.huntsman.WanderBehaviour
+ * Created by:
+ * @author Adrian Kristanto
+ * Modified by:
+ * @author Chan Chee Wei
  */
 public class WanderBehaviour implements Behaviour {
 
     private final Random random = new Random();
 
     /**
-     * Returns a MoveAction to wander randomly, if possible.
+     * Returns a MoveAction to wander to a random location, if possible.
      * If no movement is possible, returns null.
      *
      * @param actor the Actor enacting the behaviour

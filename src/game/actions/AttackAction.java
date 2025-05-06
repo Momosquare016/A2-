@@ -6,18 +6,49 @@ import edu.monash.fit2099.engine.positions.GameMap;
 import edu.monash.fit2099.engine.weapons.Weapon;
 
 /**
- * An Action to attack another Actor.
+ * Class representing an action to attack
+ * Note that the attacker must have a weapon assigned, e.g., an intrinsic weapon or a weapon item.
+ * This was adapted from a demonstration of the game engine from here:
+ * edu.monash.fit2099.demo.huntsman.AttackAction
+ * Created by:
+ * @author Adrian Kristanto
+ * Modified by:
+ * @author Chan Chee Wei
  */
 public class AttackAction extends Action {
 
-    private Actor target;
-    private String direction;
+    /**
+     * The Actor that is to be attacked
+     */
+    private final Actor target;
+
+    /**
+     * The direction of incoming attack.
+     */
+    private final String direction;
+
+    /**
+     * Weapon used for the attack
+     */
+    private Weapon weapon;
 
     /**
      * Constructor.
      *
      * @param target the Actor to attack
-     * @param direction the direction of the attack
+     * @param direction the direction where the attack should be performed (only used for display purposes)
+     */
+    public AttackAction(Actor target, String direction, Weapon weapon) {
+        this.target = target;
+        this.direction = direction;
+        this.weapon = weapon;
+    }
+
+    /**
+     * Constructor with intrinsic weapon as default
+     *
+     * @param target the actor to attack
+     * @param direction the direction where the attack should be performed (only used for display purposes)
      */
     public AttackAction(Actor target, String direction) {
         this.target = target;
@@ -26,15 +57,13 @@ public class AttackAction extends Action {
 
     @Override
     public String execute(Actor actor, GameMap map) {
-        Weapon weapon = actor.getIntrinsicWeapon();
+        if (weapon == null) {
+            weapon = actor.getIntrinsicWeapon();
+        }
 
-        // The weapon's attack method handles the hit chance, damage calculation,
-        // and returns an appropriate message
         String result = weapon.attack(actor, target, map);
-
-        // Check if target is knocked out after the attack
         if (!target.isConscious()) {
-            result += System.lineSeparator() + target.unconscious(actor, map);
+            result += "\n" + target.unconscious(actor, map);
         }
 
         return result;
@@ -42,6 +71,7 @@ public class AttackAction extends Action {
 
     @Override
     public String menuDescription(Actor actor) {
-        return actor + " attacks " + target + " at " + direction;
+        return actor + " attacks " + target + " at " + direction + " with " + (weapon != null ? weapon : actor.getIntrinsicWeapon());
     }
 }
+

@@ -1,21 +1,23 @@
-package game.Main;
+package game;
 
-import java.util.Arrays;
-import java.util.List;
 import edu.monash.fit2099.engine.displays.Display;
 import edu.monash.fit2099.engine.positions.FancyGroundFactory;
 import edu.monash.fit2099.engine.positions.GameMap;
 import edu.monash.fit2099.engine.positions.World;
-import game.Enum.EntityType;
-import game.Enum.SeedType;
-import game.Plants.Seed;
-import game.actors.Player;
-import game.ground.Blight;
-import game.ground.Floor;
-import game.ground.Soil;
-import game.ground.Wall;
-import game.animals.AnimalFactory;
+import game.grounds.Bloodrose;
+import game.grounds.Inheritree;
+import game.items.Seed;
+import game.grounds.Blight;
+import game.grounds.Floor;
+import game.grounds.Soil;
+import game.grounds.Wall;
 import game.items.Talisman;
+import game.actors.OmenSheep;
+import game.actors.SpiritGoat;
+import game.actors.Player;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * The main class to setup and run the game.
@@ -60,21 +62,17 @@ public class Application {
             }
         }
 
-        Player player = new Player("Farmer", '@', 100);
+        gameMap.at(22,11).addActor(new OmenSheep());
+        gameMap.at(22,10).addActor(new SpiritGoat());
+
+        Player player = new Player("Farmer", '@', 100,200);
         world.addPlayer(player, gameMap.at(23, 10));
 
-        player.addItemToInventory(new Seed(SeedType.INHERITREE));
-        player.addItemToInventory(new Seed(SeedType.BLOODROSE));
+        player.addItemToInventory(new Seed(new Inheritree()));
+        player.addItemToInventory(new Seed(new Bloodrose()));
 
         // game setup
         gameMap.at(24, 11).addItem(new Talisman());
-
-        // Add some spirit goats and omen sheep to the map
-        AnimalFactory.createAnimalAt(EntityType.SPIRIT_GOAT, gameMap.at(20, 8));
-        AnimalFactory.createAnimalAt(EntityType.SPIRIT_GOAT, gameMap.at(25, 12));
-        AnimalFactory.createAnimalAt(EntityType.OMEN_SHEEP, gameMap.at(18, 10));
-        AnimalFactory.createAnimalAt(EntityType.OMEN_SHEEP, gameMap.at(28, 9));
-
 
         world.run();
     }
