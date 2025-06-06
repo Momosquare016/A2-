@@ -1,30 +1,42 @@
-package game.actors;
+package game.actors.npcs;
 
+import edu.monash.fit2099.demo.mars.behaviours.FollowBehaviour;
 import edu.monash.fit2099.engine.actions.Action;
 import edu.monash.fit2099.engine.actions.ActionList;
 import edu.monash.fit2099.engine.actors.Actor;
 import edu.monash.fit2099.engine.displays.Display;
 import edu.monash.fit2099.engine.items.Item;
 import edu.monash.fit2099.engine.positions.GameMap;
-import game.Curable;
+
+import game.LocationUtils;
 import game.actions.CureAction;
-import game.actions.DummyAction;
+import game.actors.NPC;
+import game.behaviours.RandomBehaviourSelector;
+import game.behaviours.SequentialBehaviourSelector;
+import game.effects.RotEffect;
+import game.behaviours.ReproduceBehaviour;
+import game.behaviours.WanderBehaviour;
 import game.enums.Ability;
 import game.enums.Status;
+import game.interfaces.BehaviourSelectionStrategy;
+import game.interfaces.Curable;
+import game.interfaces.Reproducible;
 
 /**
  * A concrete NPC representing the Spirit Goat.
  * The Spirit Goat can be attacked and will wander randomly using {@link WanderBehaviour}.
- * It disappears after 10 turns using a {@link RotBehaviour} countdown timer.
+ * It disappears after 10 turns using a {@link RotEffect} countdown timer.
  * If cured using a valid curing item, the countdown timer resets.
+ * Spirit Goats can reproduce when near entities blessed by grace.
  * Created by:
  * @author Chan Chee Wei
+
  */
-public class SpiritGoat extends NPC implements Curable {
+public class SpiritGoat extends NPC implements Curable, Reproducible {
     /**
      * The countdown of turns before Spirit Goat disappears or becomes unconscious.
      */
-    private final RotBehaviour rotCountdown;
+    private final RotEffect rotEffect;
 
     /**
      * Constructor to create a Spirit Goat NPC.
@@ -32,19 +44,22 @@ public class SpiritGoat extends NPC implements Curable {
      * It is given the {@code ATTACKABLE} and {@code CURABLE} status capabilities,
      * and it wanders randomly each turn via a {@link WanderBehaviour}.
      */
-    public SpiritGoat() {
-        super("Spirit Goat", 'y', 50);
-        this.rotCountdown = new RotBehaviour(10);
+    public SpiritGoat(BehaviourSelectionStrategy strategy) {
+        super("Spirit Goat", 'y', 50,strategy);
+        this.rotEffect = new RotEffect(10);
 
         this.addCapability(Status.ATTACKABLE);
         this.addCapability(Status.CURABLE);
+
         this.addBehaviour(999, new WanderBehaviour());
+        this.addBehaviour(2, new ReproduceBehaviour(this, 3));
     }
+
 
     /**
      * Determines the Spirit Goat's action each turn.
-     * If the rot countdown reaches zero, it becomes unconscious and performs no action.
-     * Otherwise, it executes the first valid behavior in priority order.
+     * Removes reproduction cooldown with 20% chance.
+     * If the rot countdown reaches zero, it becomes unconscious.
      *
      * @param actions a list of allowable actions
      * @param lastAction the action performed last turn
@@ -54,12 +69,9 @@ public class SpiritGoat extends NPC implements Curable {
      */
     @Override
     public Action playTurn(ActionList actions, Action lastAction, GameMap map, Display display) {
-        if (rotCountdown.tick()) {
-            display.println(this.unconscious(map));
-            return new DummyAction();
-        }
-
+        display.println(this + String.format(" has %s", rotEffect.getTurnLeft()));
         return super.playTurn(actions, lastAction, map, display);
+
     }
 
     /**
@@ -94,19 +106,19 @@ public class SpiritGoat extends NPC implements Curable {
      */
     @Override
     public String cure(Actor actor, GameMap map) {
-        rotCountdown.reset();
-
+        rotEffect.reset();
         return "The countdown timer of " + this + " has reset";
     }
 
-    /**
-     * Returns the string representation of the Spirit Goat,
-     * including its current HP and turns remaining before disappearance.
-     *
-     * @return a string description of the Omen Sheep
-     */
     @Override
-    public String toString() {
-        return super.toString() + " " + rotCountdown.toString();
+    public boolean canReproduce(GameMap map) {
+        return (new LocationUtils(map.locationOf(this)).hasSurroundingWith(Status.BLESSED_BY_GRACE));
     }
+
+    @Override
+    public String reproduce(GameMap map) {
+        new LocationUtils(map.locationOf(this)).spawnActor(new SpiritGoat(this.selectionStrategy));
+        return "a Spirit Goat";
+    }
+
 }

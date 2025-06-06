@@ -9,5 +9,7 @@ public enum Status {
     HOSTILE_TO_ENEMY,
     ATTACKABLE,
     CURSED,
-    CURABLE
+    CURABLE,
+    BLESSED_BY_GRACE,  // For Inheritree and other blessed entities
+    FOLLOWABLE         // For actors that can be followed
 }

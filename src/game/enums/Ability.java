@@ -7,5 +7,5 @@ package game.enums;
  */
 public enum Ability {
     FERTILE_GROUND,
-    CURING_ITEM
+    CURING_ITEM,
 }

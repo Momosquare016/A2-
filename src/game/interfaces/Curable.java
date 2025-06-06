@@ -1,4 +1,4 @@
-package game;
+package game.interfaces;
 
 import edu.monash.fit2099.engine.actors.Actor;
 import edu.monash.fit2099.engine.positions.GameMap;
@@ -8,6 +8,7 @@ import edu.monash.fit2099.engine.positions.GameMap;
  * Implementing classes define how they respond to a curing attempt.
  * Created by:
  * @author Chan Chee Wei
+ * @author Muhammad Ali Raza
  */
 public interface Curable {
     /**

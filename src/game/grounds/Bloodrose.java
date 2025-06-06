@@ -9,6 +9,7 @@ import edu.monash.fit2099.engine.positions.Location;
  * Upon planting, it injures the actor who planted it. Each turn, it damages any actor in adjacent tiles.
  * Created by:
  * @author Chan Chee Wei
+ * @author Muhammad Ali Raza
  */
 public class Bloodrose extends Crop{
     /**

@@ -1,4 +1,4 @@
-package game.actors;
+package game.actors.npcs;
 
 import edu.monash.fit2099.engine.actions.Action;
 import edu.monash.fit2099.engine.actions.ActionList;
@@ -8,26 +8,36 @@ import edu.monash.fit2099.engine.items.Item;
 import edu.monash.fit2099.engine.positions.Exit;
 import edu.monash.fit2099.engine.positions.GameMap;
 import edu.monash.fit2099.engine.positions.Location;
-import game.Curable;
+
 import game.actions.CureAction;
-import game.actions.DummyAction;
-import game.grounds.Inheritree;
+import game.actors.NPC;
+import game.behaviours.RandomBehaviourSelector;
+import game.behaviours.ReproduceBehaviour;
+import game.behaviours.SequentialBehaviourSelector;
+import game.effects.RotEffect;
+import game.behaviours.WanderBehaviour;
 import game.enums.Ability;
 import game.enums.Status;
+import game.grounds.Inheritree;
+import game.interfaces.BehaviourSelectionStrategy;
+import game.interfaces.Curable;
+import game.interfaces.Reproducible;
+import game.items.OmenEgg;
 
 /**
  * A concrete NPC representing the Omen Sheep.
  * The Omen Sheep can be attacked and will wander randomly using {@link WanderBehaviour}.
- * It disappears after 15 turns using a {@link RotBehaviour} countdown timer.
+ * It disappears after 15 turns using a {@link RotEffect} countdown timer.
  * If cured using a valid curing item, it transforms all adjacent tiles into {@link Inheritree}.
+ * The Omen Sheep produces eggs every 7 turns which can hatch into new sheep.
  * Created by:
  * @author Chan Chee Wei
  */
-public class OmenSheep extends NPC implements Curable {
+public class OmenSheep extends NPC implements Curable, Reproducible {
     /**
      * The countdown of turns before Omen Sheep disappears or becomes unconscious.
      */
-    private final RotBehaviour rotCountdown;
+    private final RotEffect rotEffect;
 
     /**
      * Constructor to create an Omen Sheep NPC.
@@ -35,19 +45,23 @@ public class OmenSheep extends NPC implements Curable {
      * It is given the {@code ATTACKABLE} and {@code CURABLE} status capabilities,
      * It also wanders randomly each turn via a {@link WanderBehaviour}.
      */
-    public OmenSheep() {
-        super("Omen Sheep", 'm', 75);
-        this.rotCountdown = new RotBehaviour(15);
+    public OmenSheep(BehaviourSelectionStrategy strategy) {
+        super("Omen Sheep", 'm', 75,strategy);
+        this.rotEffect = new RotEffect(15);
+        this.addStatusEffect(rotEffect);
 
         this.addCapability(Status.ATTACKABLE);
         this.addCapability(Status.CURABLE);
+
         this.addBehaviour(999, new WanderBehaviour());
+        this.addBehaviour(2, new ReproduceBehaviour(this, 7));
     }
 
     /**
      * Determines the Omen Sheep's action each turn.
      * If the rot countdown reaches zero, it becomes unconscious and performs no action.
      * Otherwise, it executes the first valid behavior in priority order.
+     * Additionally, it lays eggs every 7 turns.
      *
      * @param actions a list of allowable actions
      * @param lastAction the action performed last turn
@@ -57,10 +71,7 @@ public class OmenSheep extends NPC implements Curable {
      */
     @Override
     public Action playTurn(ActionList actions, Action lastAction, GameMap map, Display display) {
-        if (rotCountdown.tick()) {
-            display.println(this.unconscious(map));
-            return new DummyAction();
-        }
+        display.println(this + String.format(" has %s", rotEffect.getTurnLeft()));
         return super.playTurn(actions, lastAction, map, display);
     }
 
@@ -104,14 +115,18 @@ public class OmenSheep extends NPC implements Curable {
         return "The surroundings of " + this + " has transformed into Inheritrees";
     }
 
-    /**
-     * Returns the string representation of the Omen Sheep,
-     * including its current HP and turns remaining before disappearance.
-     *
-     * @return a string description of the Omen Sheep
-     */
     @Override
-    public String toString() {
-        return super.toString() + " " + rotCountdown.toString();
+    public boolean canReproduce(GameMap map) {
+        return true;
+    }
+
+    @Override
+    public String reproduce(GameMap map) {
+        OmenEgg egg = map.toString().contains("valley")
+                ? OmenEgg.createValleyEgg()
+                : OmenEgg.createLimveldEgg();
+
+        map.locationOf(this).addItem(egg);
+        return "an Egg";
     }
 }

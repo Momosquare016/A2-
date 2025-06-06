@@ -9,7 +9,6 @@ import edu.monash.fit2099.engine.displays.Display;
 import edu.monash.fit2099.engine.displays.Menu;
 import edu.monash.fit2099.engine.positions.GameMap;
 import game.FancyMessage;
-import game.actions.DummyAction;
 import game.enums.Status;
 import game.weapons.BareFist;
 
@@ -31,7 +30,10 @@ public class Player extends Actor {
     public Player(String name, char displayChar, int hitPoints, int stamina) {
         super(name, displayChar, hitPoints);
         this.addAttribute(BaseActorAttributes.STAMINA, new BaseActorAttribute(stamina));
+
         this.addCapability(Status.HOSTILE_TO_ENEMY);
+        this.addCapability(Status.ATTACKABLE);
+
         this.setIntrinsicWeapon(new BareFist());
     }
 
@@ -52,6 +54,20 @@ public class Player extends Actor {
         }
     }
 
+    @Override
+    public String unconscious(Actor actor, GameMap map) {
+        printDeathMessage(new Display());
+
+        return super.unconscious(actor, map);
+    }
+
+    @Override
+    public String unconscious(GameMap map) {
+        printDeathMessage(new Display());
+
+        return super.unconscious(map);
+    }
+
     /**
      * Handles the Player's turn.
      * If the player is unconscious, shows the death message and returns a dummy action.
@@ -66,12 +82,6 @@ public class Player extends Actor {
      */
     @Override
     public Action playTurn(ActionList actions, Action lastAction, GameMap map, Display display) {
-        // Check if player is conscious
-        if (!this.isConscious()) {
-            printDeathMessage(display);
-            display.println(this.unconscious(map));
-            return new DummyAction();
-        }
 
         // Handle multi-turn Actions
         if (lastAction.getNextAction() != null)

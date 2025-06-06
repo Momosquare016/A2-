@@ -6,7 +6,7 @@ import edu.monash.fit2099.engine.actors.attributes.ActorAttributeOperations;
 import edu.monash.fit2099.engine.actors.attributes.BaseActorAttributes;
 import edu.monash.fit2099.engine.items.Item;
 import edu.monash.fit2099.engine.positions.GameMap;
-import game.Curable;
+import game.interfaces.Curable;
 
 /**
  * Class representing an action to cure a {@link Curable} target using a curing item such as a Talisman.
@@ -14,7 +14,7 @@ import game.Curable;
  * Created by:
  * @author Chan Chee Wei
  */
-public class CureAction extends Action implements StaminaCosting{
+public class CureAction extends Action implements StaminaCosting {
     /**
      * The Item used to cure
      */

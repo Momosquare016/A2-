@@ -10,9 +10,12 @@ import edu.monash.fit2099.engine.displays.Display;
 import edu.monash.fit2099.engine.positions.GameMap;
 import game.actions.AttackAction;
 import game.enums.Status;
+import game.interfaces.BehaviourSelectionStrategy;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.TreeMap;
 
 /**
  * Abstract class representing a Non-Player Character (NPC) in the game.
@@ -27,7 +30,8 @@ public abstract class NPC extends Actor {
      * A mapping of behaviours with assigned priorities.
      * Lower integer values may indicate higher priority.
      */
-    protected Map<Integer, Behaviour> behaviours = new HashMap<>();
+    protected Map<Integer, Behaviour> behaviours = new TreeMap<>();
+    protected BehaviourSelectionStrategy selectionStrategy;
 
     /**
      * Constructor to create an NPC with a name, display character, and hit points.
@@ -36,8 +40,9 @@ public abstract class NPC extends Actor {
      * @param displayChar the character representing the NPC on the map
      * @param hitPoints the starting hit points of the NPC
      */
-    public NPC(String name, char displayChar, int hitPoints) {
+    public NPC(String name, char displayChar, int hitPoints, BehaviourSelectionStrategy strategy) {
         super(name, displayChar, hitPoints);
+        this.selectionStrategy = strategy;
     }
 
     /**
@@ -62,13 +67,8 @@ public abstract class NPC extends Actor {
      */
     @Override
     public Action playTurn(ActionList actions, Action lastAction, GameMap map, Display display) {
-        for (Behaviour behaviour : behaviours.values()) {
-            Action action = behaviour.getAction(this, map);
-            if (action != null) return action;
-        }
-        return new DoNothingAction();
+        return selectionStrategy.selectBehaviour(this, map, behaviours);
     }
-
     /**
      * Returns a list of allowable actions that another actor can perform on this NPC.
      * If the other actor is hostile and this NPC is attackable, an AttackAction is added.

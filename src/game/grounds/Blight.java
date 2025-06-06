@@ -6,7 +6,7 @@ import edu.monash.fit2099.engine.items.Item;
 import edu.monash.fit2099.engine.positions.GameMap;
 import edu.monash.fit2099.engine.positions.Ground;
 import edu.monash.fit2099.engine.positions.Location;
-import game.Curable;
+import game.interfaces.Curable;
 import game.actions.CureAction;
 import game.enums.Ability;
 import game.enums.Status;
