@@ -3,20 +3,30 @@ package game.actors;
 import edu.monash.fit2099.engine.actions.Action;
 import edu.monash.fit2099.engine.actions.ActionList;
 import edu.monash.fit2099.engine.actors.Actor;
+import edu.monash.fit2099.engine.actors.StatusEffect;
 import edu.monash.fit2099.engine.actors.attributes.BaseActorAttribute;
 import edu.monash.fit2099.engine.actors.attributes.BaseActorAttributes;
 import edu.monash.fit2099.engine.displays.Display;
 import edu.monash.fit2099.engine.displays.Menu;
 import edu.monash.fit2099.engine.positions.GameMap;
+import edu.monash.fit2099.engine.positions.Location;
 import game.FancyMessage;
+import game.actions.DestroyRelicAction;
+import game.items.RelicManager;
+import game.time.TimeManager;
 import game.enums.Status;
 import game.weapons.BareFist;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Class representing the Player.
  * @author Adrian Kristanto
  */
 public class Player extends Actor {
+    private final TimeManager timeManager;
+
     /**
      * Constructor.
      * Adds STAMINA attribute to the Player class.
@@ -27,7 +37,7 @@ public class Player extends Actor {
      * @param displayChar Character to represent the player in the UI
      * @param hitPoints   Player's starting number of hitpoints
      */
-    public Player(String name, char displayChar, int hitPoints, int stamina) {
+    public Player(String name, char displayChar, int hitPoints, int stamina, TimeManager timeManager) {
         super(name, displayChar, hitPoints);
         this.addAttribute(BaseActorAttributes.STAMINA, new BaseActorAttribute(stamina));
 
@@ -35,6 +45,8 @@ public class Player extends Actor {
         this.addCapability(Status.ATTACKABLE);
 
         this.setIntrinsicWeapon(new BareFist());
+
+        this.timeManager = timeManager;
     }
 
     /**
@@ -82,6 +94,11 @@ public class Player extends Actor {
      */
     @Override
     public Action playTurn(ActionList actions, Action lastAction, GameMap map, Display display) {
+        timeManager.progressTime();
+        display.println(timeManager.toString());
+
+        display.println(displayAttributes());
+        display.println(displayStatusEffects());
 
         // Handle multi-turn Actions
         if (lastAction.getNextAction() != null)
@@ -93,18 +110,45 @@ public class Player extends Actor {
     }
 
     /**
-     * Returns a string representation of the Player's current health and stamina.
+     * Returns a string representation of the Player's current attributes.
      *
-     * @return A formatted string with the player's HP and STA
+     * @return A formatted string with the player's current attributes.
      */
-    @Override
-    public String toString() {
-        return name + " (HP: " +
+    private String displayAttributes() {
+        return name + ": (HP: " +
                 this.getAttribute(BaseActorAttributes.HEALTH) + "/" +
                 this.getAttributeMaximum(BaseActorAttributes.HEALTH) +
                 ")" + " (STA: " +
                 this.getAttribute(BaseActorAttributes.STAMINA) + "/" +
                 this.getAttributeMaximum(BaseActorAttributes.STAMINA) +
-                ")";
+                ")" + " Runes: " +
+                this.getBalance();
     }
+
+    /**
+     * Returns a string representation of the Player's currently inflicted Status Effects.
+     *
+     * @return A formatted string with the player's currently inflicted Status Effects.
+     */
+    private String displayStatusEffects() {
+        if (this.getStatusEffects().isEmpty()) {
+            return "No active Status Effects";
+        }
+        List<String> inflictedStatuses = new ArrayList<>();
+        for (StatusEffect statusEffect : this.getStatusEffects()) {
+            inflictedStatuses.add(statusEffect.toString());
+        }
+
+        return String.join("\n", inflictedStatuses);
+    }
+
+    public ActionList allowableActions(Location location) {
+        ActionList actions = new ActionList();
+        if (RelicManager.getInstance().getActiveRelic() != null) {
+            actions.add(new DestroyRelicAction());
+        }
+        // Add other actions...
+        return actions;
+    }
+
 }

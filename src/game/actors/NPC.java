@@ -12,7 +12,6 @@ import game.actions.AttackAction;
 import game.enums.Status;
 import game.interfaces.BehaviourSelectionStrategy;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;

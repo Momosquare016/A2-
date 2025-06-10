@@ -36,7 +36,7 @@ public class LocationUtils {
      * @param capability the status capability to search for
      * @return {@code true} if any adjacent tile contains the given capability on an actor, item, or ground; {@code false} otherwise
      */
-    public boolean hasSurroundingWith(Status capability) {
+    public boolean hasSurroundingWith(Enum<?> capability) {
         for (Exit exit : location.getExits()) {
             Location destination = exit.getDestination();
             if (destination.getActor() != null && destination.getActor().hasCapability(capability)) {
@@ -50,6 +50,37 @@ public class LocationUtils {
             }
 
             if (destination.getGround().hasCapability(capability)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Actor getAdjacentActorWith(Enum<?> capability) {
+        for (Actor candidate : getAdjacentActors()) {
+            if (candidate.hasCapability(capability)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    public List<Actor> getAdjacentActors() {
+        List<Actor> actors = new ArrayList<>();
+        for (Exit exit : location.getExits()) {
+            Location adjacent = exit.getDestination();
+            Actor actor = adjacent.getActor();
+            if (actor != null) {
+                actors.add(actor);
+            }
+        }
+
+        return actors;
+    }
+
+    public boolean isAdjacentTo(Location other) {
+        for (Exit exit : location.getExits()) {
+            if (exit.getDestination() == other) {
                 return true;
             }
         }
@@ -92,5 +123,44 @@ public class LocationUtils {
         if (!validLocations.isEmpty()) {
             validLocations.get(new Random().nextInt(validLocations.size())).addActor(actor);
         }
+    }
+
+    public String getDirectionToActor(Actor actor) {
+        for (Exit exit : location.getExits()) {
+            if (exit.getDestination().getActor() == actor) {
+                return exit.getName();
+            }
+        }
+        return null;
+    }
+
+    public Exit getBestExitTowards(Location destination, Actor actor) {
+        int shortestDistance = distance(location, destination);
+        Exit bestExit = null;
+
+        for (Exit exit : location.getExits()) {
+            Location next = exit.getDestination();
+            if (next.canActorEnter(actor)) {
+                int newDistance = distance(next, destination);
+                if (newDistance < shortestDistance) {
+                    shortestDistance = newDistance;
+                    bestExit = exit;
+                }
+            }
+        }
+        return bestExit;
+    }
+
+    /**
+     * Computes the Manhattan distance between two locations.
+     * This is the number of steps required to move from one location to the other
+     * using only the four cardinal directions.
+     *
+     * @param a the first location
+     * @param b the second location
+     * @return the Manhattan distance between {@code a} and {@code b}
+     */
+    public int distance(Location a, Location b) {
+        return Math.abs(a.x() - b.x()) + Math.abs(a.y() - b.y());
     }
 }

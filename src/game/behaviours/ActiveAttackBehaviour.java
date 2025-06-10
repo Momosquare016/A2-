@@ -3,12 +3,12 @@ package game.behaviours;
 import edu.monash.fit2099.engine.actions.Action;
 import edu.monash.fit2099.engine.actors.Actor;
 import edu.monash.fit2099.engine.actors.Behaviour;
-import edu.monash.fit2099.engine.actors.attributes.BaseActorAttributes;
 import edu.monash.fit2099.engine.positions.Exit;
 import edu.monash.fit2099.engine.positions.GameMap;
 import edu.monash.fit2099.engine.positions.Location;
 import game.actions.AttackAction;
 import game.enums.Status;
+import game.interfaces.Attacker;
 
 /**
  * A behaviour that makes an actor attack nearby enemies with sufficient health.
@@ -18,17 +18,17 @@ import game.enums.Status;
  * Created by:
  * @author Chan Chee Wei
  */
-public class BerserkBehaviour implements Behaviour {
-    private final int healthThreshold;
+public class ActiveAttackBehaviour implements Behaviour {
+    private final Attacker attacker;
 
     /**
      * Constructor.
-     * Only adjacent actors with health equal to or above this threshold will be attacked.
+     * Initializes this behaviour with the given {@link Attacker} to determine valid attack targets.
      *
-     * @param healthThreshold the minimum HP a target must have to trigger a berserk attack
+     * @param attacker the {@link Attacker} instance used to decide if a target can be attacked
      */
-    public BerserkBehaviour(int healthThreshold) {
-        this.healthThreshold = healthThreshold;
+    public ActiveAttackBehaviour(Attacker attacker) {
+        this.attacker = attacker;
     }
 
     /**
@@ -38,7 +38,7 @@ public class BerserkBehaviour implements Behaviour {
      * <ul>
      *     <li>Is not null</li>
      *     <li>Has the {@link Status#ATTACKABLE} capability</li>
-     *     <li>Has health greater than or equal to the health threshold</li>
+     *     <li>Can be attacked by the attacker</li>
      * </ul>
      * If such a target is found, returns an {@link AttackAction} targeting that actor.
      *
@@ -53,22 +53,10 @@ public class BerserkBehaviour implements Behaviour {
         for (Exit exit : location.getExits()) {
             Location surrounding = exit.getDestination();
             Actor candidate = surrounding.getActor();
-            if (candidate != null && canAttack(candidate)) {
+            if (candidate != null && attacker.canAttack(candidate, map)) {
                 return new AttackAction(candidate, exit.getName());
             }
         }
         return null;
     }
-
-    /**
-     * Determines if the target actor meets the conditions to be attacked.
-     *
-     * @param target the actor being evaluated
-     * @return {@code true} if the target has the {@code ATTACKABLE} status and enough health; {@code false} otherwise
-     */
-    private boolean canAttack(Actor target) {
-        return target.hasCapability(Status.ATTACKABLE) &&
-                target.getAttribute(BaseActorAttributes.HEALTH) >= healthThreshold;
-    }
 }
-

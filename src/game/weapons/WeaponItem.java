@@ -1,10 +1,16 @@
 package game.weapons;
 
+import edu.monash.fit2099.engine.actions.ActionList;
 import edu.monash.fit2099.engine.actors.Actor;
 import edu.monash.fit2099.engine.items.Item;
 import edu.monash.fit2099.engine.positions.GameMap;
+import edu.monash.fit2099.engine.positions.Location;
 import edu.monash.fit2099.engine.weapons.Weapon;
+import game.LocationUtils;
+import game.actions.AttackAction;
+import game.enums.Status;
 
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -12,7 +18,9 @@ import java.util.Random;
  * @author Adrian Kristanto
  */
 public class WeaponItem extends Item implements Weapon {
+
     private static final float DEFAULT_DAMAGE_MULTIPLIER = 1.0f;
+
     private int damage;
     private int hitRate;
     private final String verb;
@@ -35,15 +43,66 @@ public class WeaponItem extends Item implements Weapon {
         this.damageMultiplier = DEFAULT_DAMAGE_MULTIPLIER;
     }
 
+    public void setDamage(int damage) {
+        this.damage = damage;
+    }
+
+    public int getDamage() {
+        return Math.round(damage * damageMultiplier);
+    }
+
+    public String getVerb() {
+        return verb;
+    }
+
+    public void setHitRate(int hitRate) {
+        this.hitRate = hitRate;
+    }
+
+    public int getHitRate() {
+        return hitRate;
+    }
+
+    public void setDamageMultiplier(float damageMultiplier) {
+        this.damageMultiplier = damageMultiplier;
+    }
+
+    public void resetDamageMultiplier() {
+        this.damageMultiplier = DEFAULT_DAMAGE_MULTIPLIER;
+    }
+
+    public float getDamageMultiplier() {
+        return damageMultiplier;
+    }
+
+    @Override
+    public ActionList allowableActions(Actor owner, GameMap map) {
+        ActionList actions = super.allowableActions(owner, map);
+
+        Location ownerLocation = map.locationOf(owner);
+        List<Actor> targets = new LocationUtils(ownerLocation).getAdjacentActors();
+
+        for (Actor target : targets) {
+            if (target.hasCapability(Status.ATTACKABLE)) {
+                String direction = new LocationUtils(ownerLocation).getDirectionToActor(target);
+                actions.add(new AttackAction(target, direction, this));
+            }
+        }
+        return actions;
+    }
+
     @Override
     public String attack(Actor attacker, Actor target, GameMap map) {
-        Random rand = new Random();
-        if (!(rand.nextInt(100) < this.hitRate)) {
+        if (isAttackSuccessful()) {
+            target.hurt(getDamage());
+            return String.format("%s %s %s for %d damage", attacker, verb, target, damage);
+        } else {
             return attacker + " misses " + target + ".";
         }
+    }
 
-        target.hurt(Math.round(damage * damageMultiplier));
-
-        return String.format("%s %s %s for %d damage", attacker, verb, target, damage);
+    protected boolean isAttackSuccessful() {
+        Random rand = new Random();
+        return rand.nextInt(100) < this.hitRate;
     }
 }

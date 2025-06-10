@@ -11,5 +11,9 @@ public enum Status {
     CURSED,
     CURABLE,
     BLESSED_BY_GRACE,  // For Inheritree and other blessed entities
-    FOLLOWABLE         // For actors that can be followed
+    FOLLOWABLE,    // For actors that can be followed
+    CAN_GROW ,      // For entities that have growth capabilities
+    POISONED,
+    ACTIVE_ATTACKER,
+    PASSIVE_ENEMY
 }

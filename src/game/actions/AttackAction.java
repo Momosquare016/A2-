@@ -4,6 +4,7 @@ import edu.monash.fit2099.engine.actions.Action;
 import edu.monash.fit2099.engine.actors.Actor;
 import edu.monash.fit2099.engine.positions.GameMap;
 import edu.monash.fit2099.engine.weapons.Weapon;
+import game.enums.Status;
 
 /**
  * Class representing an action to attack
@@ -62,6 +63,9 @@ public class AttackAction extends Action {
         }
 
         String result = weapon.attack(actor, target, map);
+        if (target.hasCapability(Status.PASSIVE_ENEMY)) {
+            actor.addCapability(Status.ACTIVE_ATTACKER);
+        }
         if (!target.isConscious()) {
             result += "\n" + target.unconscious(actor, map);
         }

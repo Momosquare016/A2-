@@ -6,11 +6,10 @@ import edu.monash.fit2099.engine.actors.attributes.BaseActorAttributes;
 import edu.monash.fit2099.engine.positions.GameMap;
 import game.actions.ListenAction;
 import game.actors.NPC;
-import game.behaviours.BerserkBehaviour;
-import game.behaviours.RandomBehaviourSelector;
-import game.behaviours.SequentialBehaviourSelector;
+import game.behaviours.ActiveAttackBehaviour;
 import game.behaviours.WanderBehaviour;
 import game.enums.Status;
+import game.interfaces.Attacker;
 import game.interfaces.BehaviourSelectionStrategy;
 import game.interfaces.Listenable;
 import game.weapons.BareFist;
@@ -26,7 +25,7 @@ import java.util.Random;
  * Created by:
  * @author Chan Chee Wei
  */
-public class Guts extends NPC implements Listenable {
+public class Guts extends NPC implements Listenable, Attacker {
 
     /** Random generator for selecting monologues. */
     private final Random random = new Random();
@@ -37,7 +36,7 @@ public class Guts extends NPC implements Listenable {
      * He is initialized with:
      * <ul>
      *     <li>{@link Status#ATTACKABLE} capability</li>
-     *     <li>{@link BerserkBehaviour} with a health threshold of 50</li>
+     *     <li>{@link ActiveAttackBehaviour} with a health threshold of 50</li>
      *     <li>{@link WanderBehaviour} as a fallback behaviour</li>
      *     <li>{@link BareFist} as an intrinsic weapon</li>
      * </ul>
@@ -46,7 +45,7 @@ public class Guts extends NPC implements Listenable {
         super("Guts", 'g', 500, strategy);
         addCapability(Status.ATTACKABLE);
 
-        addBehaviour(1, new BerserkBehaviour(50));
+        addBehaviour(1, new ActiveAttackBehaviour(this));
         addBehaviour(999, new WanderBehaviour());
 
         this.setIntrinsicWeapon(new BareFist());
@@ -70,6 +69,12 @@ public class Guts extends NPC implements Listenable {
         }
         int index = random.nextInt(monologues.size());
         return monologues.get(index);
+    }
+
+    @Override
+    public boolean canAttack(Actor target, GameMap map) {
+        return target.hasCapability(Status.ATTACKABLE) &&
+                target.getAttribute(BaseActorAttributes.HEALTH) >= 50;
     }
 
     /**

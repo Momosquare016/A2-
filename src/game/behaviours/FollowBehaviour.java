@@ -7,6 +7,7 @@ import edu.monash.fit2099.engine.actors.Behaviour;
 import edu.monash.fit2099.engine.positions.Exit;
 import edu.monash.fit2099.engine.positions.GameMap;
 import edu.monash.fit2099.engine.positions.Location;
+import game.LocationUtils;
 import game.enums.Status;
 
 /**
@@ -17,7 +18,7 @@ import game.enums.Status;
  * </p>
  *
  * Created by:
- * @author
+ * @author Chan Chee Wei
  */
 public class FollowBehaviour implements Behaviour {
 
@@ -35,56 +36,29 @@ public class FollowBehaviour implements Behaviour {
      */
     @Override
     public Action getAction(Actor actor, GameMap map) {
-        Location here = map.locationOf(actor);
-        if (target == null) {
-            findFollowableTarget(here);
+        if (!map.contains(actor)) {
             return null;
         }
 
-        if (!map.contains(target) || !map.contains(actor)) {
+        Location here = map.locationOf(actor);
+        LocationUtils utils = new LocationUtils(here);
+
+        if (target == null) {
+            target = utils.getAdjacentActorWith(Status.FOLLOWABLE);
+            return null;
+        }
+
+        if (!map.contains(target)) {
             return null;
         }
 
         Location there = map.locationOf(target);
-        int currentDistance = distance(here, there);
+        Exit bestExit = utils.getBestExitTowards(there, actor);
 
-        for (Exit exit : here.getExits()) {
-            Location destination = exit.getDestination();
-            if (destination.canActorEnter(actor)) {
-                int newDistance = distance(destination, there);
-                if (newDistance < currentDistance) {
-                    return new MoveActorAction(destination, exit.getName());
-                }
-            }
+        if (bestExit != null) {
+            return new MoveActorAction(bestExit.getDestination(), bestExit.getName());
         }
 
         return null;
-    }
-
-    /**
-     * Searches for a followable target in adjacent locations and assigns it to the {@code target} field.
-     *
-     * @param here the current location of the actor
-     */
-    private void findFollowableTarget(Location here) {
-        for (Exit exit : here.getExits()) {
-            Actor candidate = exit.getDestination().getActor();
-            if (candidate != null && candidate.hasCapability(Status.FOLLOWABLE)) {
-                target = candidate;
-            }
-        }
-    }
-
-    /**
-     * Computes the Manhattan distance between two locations.
-     * This is the number of steps required to move from one location to the other
-     * using only the four cardinal directions.
-     *
-     * @param a the first location
-     * @param b the second location
-     * @return the Manhattan distance between {@code a} and {@code b}
-     */
-    private int distance(Location a, Location b) {
-        return Math.abs(a.x() - b.x()) + Math.abs(a.y() - b.y());
     }
 }
